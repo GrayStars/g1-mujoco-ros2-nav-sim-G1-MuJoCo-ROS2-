@@ -1,0 +1,26 @@
+# ROS2 workspace outputs
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Mapping / runtime outputs
+*.bag
+*.db3
+*.mcap
+*.pcd.tmp
+src/FAST_LIO_ROS2/PCD/
+src/FAST_LIO_ROS2/Log/
+src/unitree_rl_mjlab/wandb/
+src/unitree_rl_mjlab/logs/
+src/unitree_rl_mjlab/unitree_rl_mjlab.egg-info/
+
+# Local editor files
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,156 @@
+<mujoco model="g1_29dof_vln_apartment">
+  <include file="g1_29dof.xml"/>
+
+  <statistic center="0 0 0.8" extent="8.0"/>
+
+  <visual>
+    <headlight diffuse="0.65 0.65 0.65" ambient="0.35 0.35 0.35" specular="0 0 0"/>
+    <rgba haze="0.12 0.16 0.20 1"/>
+    <global azimuth="-135" elevation="-25"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.32 0.45 0.56" rgb2="0.04 0.05 0.06" width="512" height="3072"/>
+    <texture type="2d" name="apt_floor_tex" builtin="checker" mark="edge"
+      rgb1="0.30 0.34 0.36" rgb2="0.20 0.24 0.26" markrgb="0.65 0.68 0.70"
+      width="360" height="360"/>
+    <material name="apt_floor" texture="apt_floor_tex" texuniform="true" texrepeat="10 8" reflectance="0.15"/>
+    <material name="apt_wall" rgba="0.72 0.72 0.68 1"/>
+    <material name="apt_wall_dark" rgba="0.46 0.48 0.50 1"/>
+    <material name="wood" rgba="0.55 0.36 0.20 1"/>
+    <material name="dark_wood" rgba="0.30 0.20 0.13 1"/>
+    <material name="sofa_blue" rgba="0.10 0.22 0.45 1"/>
+    <material name="bed_fabric" rgba="0.56 0.62 0.70 1"/>
+    <material name="cabinet" rgba="0.62 0.58 0.48 1"/>
+    <material name="chair" rgba="0.12 0.12 0.13 1"/>
+    <material name="target_red" rgba="0.95 0.10 0.08 1"/>
+    <material name="target_blue" rgba="0.08 0.25 0.95 1"/>
+    <material name="target_green" rgba="0.10 0.75 0.22 1"/>
+    <material name="target_yellow" rgba="0.95 0.78 0.08 1"/>
+    <material name="target_white" rgba="0.92 0.92 0.86 1"/>
+  </asset>
+
+  <worldbody>
+    <light name="main_light" pos="0 0 4.0" dir="0 0 -1" directional="true"/>
+    <light name="living_light" pos="0 -2.0 3.0" dir="0 0 -1" diffuse="0.45 0.45 0.42"/>
+    <geom name="floor" type="plane" size="0 0 0.05" material="apt_floor"/>
+
+    <!-- Apartment footprint: 11m x 8m. Robot starts in the large living room. -->
+    <geom name="wall_outer_north" type="box" size="5.5 0.06 1.15" pos="0 4.0 1.15" material="apt_wall"/>
+    <geom name="wall_outer_south" type="box" size="5.5 0.06 1.15" pos="0 -4.0 1.15" material="apt_wall"/>
+    <geom name="wall_outer_west" type="box" size="0.06 4.0 1.15" pos="-5.5 0 1.15" material="apt_wall"/>
+    <geom name="wall_outer_east" type="box" size="0.06 4.0 1.15" pos="5.5 0 1.15" material="apt_wall"/>
+
+    <!-- Long interior walls. Gaps are real door openings, not filled by frames. -->
+    <geom name="wall_rooms_bottom_left" type="box" size="1.00 0.05 1.08" pos="-2.40 0.55 1.08" material="apt_wall"/>
+    <!-- <geom name="wall_rooms_bottom_mid" type="box" size="1.70 0.05 1.08" pos="0.00 0.55 1.08" material="apt_wall"/> -->
+    <!-- <geom name="wall_rooms_bottom_right" type="box" size="1.10 0.05 1.08" pos="4.35 0.55 1.08" material="apt_wall"/> -->
+
+    <!-- Two far-away doors into north rooms: left bedroom door and right manipulation-room door. -->
+    <geom name="wall_bedroom_study_split" type="box" size="0.05 1.70 1.08" pos="-1.45 2.25 1.08" material="apt_wall"/>
+    <geom name="wall_study_manip_split" type="box" size="0.05 1.70 1.08" pos="2.00 2.25 1.08" material="apt_wall"/>
+
+    <!-- A short asymmetric partition in the living room, useful for localization and route planning. -->
+    <geom name="living_partition" type="box" size="0.05 1.25 1.05" pos="-1.65 -3.05 1.05" material="apt_wall_dark"/>
+
+    <!-- Bedroom, northwest. Door is far from the robot at x=-4.35, y=0.55. -->
+    <body name="bedroom_bed" pos="-4.35 2.95 0.22">
+      <geom name="bedroom_bed_base" type="box" size="0.85 0.50 0.18" material="dark_wood"/>
+      <geom name="bedroom_mattress" type="box" size="0.80 0.45 0.08" pos="0 0 0.23" material="bed_fabric"/>
+      <geom name="bedroom_pillow" type="box" size="0.24 0.34 0.06" pos="-0.48 0 0.36" rgba="0.90 0.90 0.86 1"/>
+    </body>
+    <body name="bedroom_nightstand" pos="-3.20 1.15 0.38">
+      <geom name="bedroom_nightstand_top" type="box" size="0.28 0.25 0.05" material="wood"/>
+      <geom name="bedroom_nightstand_body" type="box" size="0.24 0.22 0.32" pos="0 0 -0.15" material="dark_wood"/>
+      <body name="target_blue_mug_bedroom" pos="0.02 0.02 0.14">
+        <geom name="blue_mug_body" type="cylinder" size="0.055 0.075" material="target_blue"/>
+      </body>
+    </body>
+
+    <!-- Study, north center. Door is nearer to corridor but offset from robot's direct line. -->
+    <!-- <body name="study_desk" pos="0.00 3.05 0.48">
+      <geom name="study_desk_top" type="box" size="0.70 0.34 0.05" material="wood"/>
+      <geom name="study_desk_leg_fl" type="box" size="0.04 0.04 0.43" pos="0.56 0.25 -0.43" material="dark_wood"/>
+      <geom name="study_desk_leg_fr" type="box" size="0.04 0.04 0.43" pos="0.56 -0.25 -0.43" material="dark_wood"/>
+      <geom name="study_desk_leg_bl" type="box" size="0.04 0.04 0.43" pos="-0.56 0.25 -0.43" material="dark_wood"/>
+      <geom name="study_desk_leg_br" type="box" size="0.04 0.04 0.43" pos="-0.56 -0.25 -0.43" material="dark_wood"/>
+      <body name="target_yellow_book_study" pos="-0.18 0.03 0.08">
+        <geom name="yellow_book" type="box" size="0.16 0.10 0.025" material="target_yellow"/>
+      </body>
+    </body> -->
+    <body name="study_high_table" pos="0.00 3.05 0.88">
+      <geom name="study_high_table_top" type="box" size="0.65 0.42 0.06" material="wood"/>
+      <geom name="study_high_table_leg_fl" type="box" size="0.045 0.045 0.42" pos="0.56 0.25 -0.43" material="dark_wood"/>
+      <geom name="study_high_table_leg_fr" type="box" size="0.045 0.045 0.42" pos="0.56 -0.25 -0.43" material="dark_wood"/>
+      <geom name="study_high_table_leg_bl" type="box" size="0.045 0.045 0.42" pos="-0.56 0.25 -0.43" material="dark_wood"/>
+      <geom name="study_high_table_leg_br" type="box" size="0.045 0.045 0.42" pos="-0.56 -0.25 -0.43" material="dark_wood"/>
+      <body name="study_target_white_cup_manip_room" pos="0.10 0.03 0.12">
+        <geom name="study_white_cup_body" type="cylinder" size="0.06 0.10" material="target_white"/>
+      </body>
+    </body>
+
+    <!-- <body name="study_chair" pos="0.05 2.35 0.36">
+      <geom name="study_chair_seat" type="box" size="0.24 0.24 0.05" material="chair"/>
+      <geom name="study_chair_back" type="box" size="0.24 0.04 0.32" pos="0 -0.20 0.25" material="chair"/>
+    </body> -->
+
+    <!-- Manipulation room, northeast. High table is reachable by standing G1. Door is far right.
+         Modified: storage shelf moved inward to clear the door area for G1 navigation. -->
+    <body name="manip_high_table" pos="4.05 2.65 0.88">
+      <geom name="manip_high_table_top" type="box" size="0.65 0.42 0.06" material="wood"/>
+      <geom name="manip_high_table_leg_fl" type="box" size="0.045 0.045 0.82" pos="0.50 0.30 -0.82" material="dark_wood"/>
+      <geom name="manip_high_table_leg_fr" type="box" size="0.045 0.045 0.82" pos="0.50 -0.30 -0.82" material="dark_wood"/>
+      <geom name="manip_high_table_leg_bl" type="box" size="0.045 0.045 0.82" pos="-0.50 0.30 -0.82" material="dark_wood"/>
+      <geom name="manip_high_table_leg_br" type="box" size="0.045 0.045 0.82" pos="-0.50 -0.30 -0.82" material="dark_wood"/>
+      <body name="target_white_cup_manip_room" pos="0.10 0.03 0.12">
+        <geom name="white_cup_body" type="cylinder" size="0.06 0.10" material="target_white"/>
+      </body>
+    </body>
+    <!-- <body name="manip_storage_shelf" pos="3.45 1.75 0.65">
+      <geom name="manip_storage_shelf_block" type="box" size="0.38 0.22 0.65" material="cabinet"/>
+    </body> -->
+
+    <!-- Kitchen zone, southwest, open to the living room.
+         Modified: table/cabinet shifted to create a more usable approach corridor. -->
+    <body name="kitchen_table" pos="-3.55 -2.35 0.50">
+      <geom name="kitchen_table_top" type="box" size="0.62 0.45 0.05" material="wood"/>
+      <geom name="kitchen_table_leg_fl" type="box" size="0.04 0.04 0.45" pos="0.50 0.33 -0.45" material="dark_wood"/>
+      <geom name="kitchen_table_leg_fr" type="box" size="0.04 0.04 0.45" pos="0.50 -0.33 -0.45" material="dark_wood"/>
+      <geom name="kitchen_table_leg_bl" type="box" size="0.04 0.04 0.45" pos="-0.50 0.33 -0.45" material="dark_wood"/>
+      <geom name="kitchen_table_leg_br" type="box" size="0.04 0.04 0.45" pos="-0.50 -0.33 -0.45" material="dark_wood"/>
+      <body name="target_green_bottle_kitchen" pos="0.12 -0.05 0.14">
+        <geom name="green_bottle_body" type="cylinder" size="0.045 0.14" material="target_green"/>
+      </body>
+    </body>
+    <body name="kitchen_cabinet" pos="-5.10 -1.85 0.62">
+      <geom name="kitchen_cabinet_block" type="box" size="0.32 1.05 0.62" material="cabinet"/>
+    </body>
+
+    <!-- Large living room, south/east. This is the robot spawn and navigation staging area.
+         Modified: coffee table shifted away from sofa; nearby landmarks moved to enlarge spawn clearance. -->
+    <body name="living_sofa" pos="1.25 -3.20 0.36">
+      <geom name="living_sofa_seat" type="box" size="0.95 0.30 0.16" material="sofa_blue"/>
+      <geom name="living_sofa_back" type="box" size="0.95 0.08 0.40" pos="0 -0.30 0.24" material="sofa_blue"/>
+      <geom name="living_sofa_left_arm" type="box" size="0.08 0.32 0.25" pos="-1.02 0 0.10" material="sofa_blue"/>
+      <geom name="living_sofa_right_arm" type="box" size="0.08 0.32 0.25" pos="1.02 0 0.10" material="sofa_blue"/>
+    </body>
+    <body name="living_coffee_table" pos="1.00 -1.95 0.34">
+      <geom name="living_coffee_table_top" type="box" size="0.55 0.32 0.045" material="wood"/>
+      <geom name="living_coffee_table_base" type="box" size="0.30 0.18 0.28" pos="0 0 -0.28" material="dark_wood"/>
+      <body name="target_red_cube_living" pos="0.08 0.03 0.10">
+        <geom name="red_cube" type="box" size="0.075 0.075 0.075" material="target_red"/>
+      </body>
+    </body>
+    <body name="living_tv_cabinet" pos="4.65 -2.25 0.45">
+      <geom name="living_tv_cabinet_block" type="box" size="0.35 1.05 0.45" material="cabinet"/>
+    </body>
+
+    <!-- Asymmetric landmarks for laser localization in the large living room. -->
+    <!-- <body name="living_landmark_box" pos="-0.65 -0.35 0.30">
+      <geom name="living_landmark_box_geom" type="box" size="0.18 0.18 0.30" material="apt_wall_dark"/>
+    </body>
+    <body name="small_round_obstacle" pos="3.85 -1.20 0.22">
+      <geom name="small_round_obstacle_geom" type="cylinder" size="0.16 0.22" material="apt_wall_dark"/>
+    </body> -->
+  </worldbody>
+</mujoco>
