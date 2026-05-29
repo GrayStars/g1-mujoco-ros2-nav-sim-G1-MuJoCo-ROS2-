@@ -1,0 +1,143 @@
+还缺少了依赖：
+	sudo apt install ros-foxy-rmw-cyclonedds-cpp
+
+新建工作空间，git clone 代码后，结构应如下：
+	xkh@xkh-Lenovo-Legion-R7000P2021:~/g1_ws/src$ ls
+		FAST_LIO_ROS2            Livox-SDK2  unitree_mujoco    unitree_sdk2
+		lidar_localization_ros2  maps        unitree_rl_mjlab
+		livox_ros_driver2        mujuco_sim  unitree_ros2
+
+首先按照宇树官方配置好unitree_xxxxx等开源包的环境，完成后确认以下两个基础流程可以跑通
+
+编译_mujoco
+	没有mujoco或者提示找不到，说明mujoco没有安装或者正确链接：
+	mkdir -p ~/.mujoco
+	cd ~/.mujoco
+	wget https://github.com/google-deepmind/mujoco/releases/download/3.2.7/mujoco-3.2.7-linux-x86_64.tar.gz
+	tar -xzf mujoco-3.2.7-linux-x86_64.tar.gz
+	find mujoco-3.2.7 -name "glfw_adapter.h"
+	
+	修改unitree_mujoco/simulate目录下的CMakeLists.txt
+	找到：
+	link_libraries(
+	  pthread
+	  mujoco
+	  glfw
+	  yaml-cpp
+	  unitree_sdk2
+	  boost_program_options
+	  fmt
+	)
+	加入 rt
+	
+	cd {your_workspace}/src/unitree_mujoco/simulate
+	rm -rf build
+	mkdir build
+	cd build
+	cmake ..   -DMUJOCO_DIR=$HOME/.mujoco/mujoco-3.2.7   -DCMAKE_PREFIX_PATH=$HOME/.mujoco/mujoco-3.2.7
+	make -j4
+	
+	编译成功后运行
+	./unitree_mujoco
+	
+	看到如下所示仿真环境说明成功
+	
+编译_mjlab
+	cd ~/{your_workspace}/src/unitree_rl_mjlab/deploy/robots/g1
+	mkdir build && cd build
+	cmake .. && make
+	
+	编译通过后运行
+	./g1_ctrl --network=lo --domain=1 --keyboard
+	
+	等待检测到机器人后，在mujoco界面点击reset，机器人进入fix_stand状态
+	在运行g1_ctrl的终点内使用键盘ws ad qe（对应x y z）控制机器人在仿真环境中走动即说明成功
+	
+编译工作空间
+	编译前需要配置好livox、fastlio
+	下面以ROS2 foxy为例
+	Livox-SDK2/
+	mkdir -p build
+	cd build
+	cmake ..
+	make -j4
+	sudo make install
+	sudo ldconfig
+	
+	查看是否编译成功
+	find /usr/local -name "livox_lidar_api.h"
+	ldconfig -p | grep livox
+	
+	cd ~/g1_ws
+	source /opt/ros/foxy/setup.bash
+	colcon build --packages-select livox_ros_driver2   --cmake-args   -DLIVOX_LIDAR_SDK_INCLUDE_DIR=/usr/local/include   -DLIVOX_LIDAR_SDK_LIBRARY=/usr/local/lib/liblivox_lidar_sdk_shared.so
+	至此应当成功编译完成livox
+	
+	fast_lio foxy兼容问题
+	打开src/FAST_LIO_ROS2/src/laserMapping.cpp
+	搜索map_save_callback
+	将map_save_srv_ = this->create_service<std_srvs::srv::Trigger>("map_save",std::bind(&LaserMappingNode::map_save_callback....;
+        替换为
+        map_save_srv_ = this->create_service<std_srvs::srv::Trigger>(
+            "map_save",
+            std::bind(
+                &LaserMappingNode::map_save_callback,
+                this,
+                std::placeholders::_1,
+                std::placeholders::_2,
+                std::placeholders::_3));
+	对应的回调函数替换为
+	void map_save_callback(
+		const std::shared_ptr<rmw_request_id_t> request_header,
+		const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+		std::shared_ptr<std_srvs::srv::Trigger::Response> res)
+	    {
+		(void)request_header;
+		(void)req;
+
+		RCLCPP_INFO(this->get_logger(), "Saving map to %s...", map_file_path.c_str());
+		if (pcd_save_en)
+		{
+		    save_to_pcd();
+		    res->success = true;
+		    res->message = "Map saved.";
+		}
+		else
+		{
+		    res->success = false;
+		    res->message = "Map save disabled.";
+		}
+	    }
+        
+        colcon build --packages-select fast_lio
+        编译成功后
+        source /opt/ros/foxy/setup.bash
+        source install/setup.bash
+        ros2 pkg prefix fast_lio
+        看到输出即可
+	
+	
+	cd ~/yushu_ws
+	rm -rf build install log
+	source /opt/{your_ros}/humble/setup.bash
+	
+	修改src/mujuco_sim/launch目录下的三个launch文件
+	将工作空间替换为你自己命名的 WS_SRC = os.path.expanduser("~/{your_workspace}/src")
+	
+	colcon build --cmake-args -DPython3_EXECUTABLE=/usr/bin/python3
+	source install/setup.bash
+
+	ros2 launch mujuco_sim nav.launch.py
+
+
+
+
+
+
+
+
+
+
+
+
+
